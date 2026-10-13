@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:attendance_app/ui/attend/camera_screen.dart';
 
 class AttendScreen extends StatefulWidget {
@@ -19,12 +21,89 @@ class _AttendScreenState extends State<AttendScreen> {
   double? dLat;
   double? dLong;
   String strAlamat = "";
+  String strStatus = "Attend";
+  String strDateTime = "";
   bool isLoading = false;
+
+  final nameController = TextEditingController();
+  final CollectionReference dataCollection =
+      FirebaseFirestore.instance.collection('attendance');
 
   @override
   void initState() {
     super.initState();
     getGeoLocationPosition();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  void setStatusAbsen() {
+    final now = DateTime.now();
+    final dateHours = now.hour;
+    final dateMinutes = now.minute;
+
+    if (dateHours < 8 || (dateHours == 8 && dateMinutes <= 30)) {
+      strStatus = "Attend";   // Tepat waktu (sebelum / pukul 08:30)
+    } else if ((dateHours > 8 && dateHours < 18) ||
+        (dateHours == 8 && dateMinutes >= 31)) {
+      strStatus = "Late";     // Terlambat (08:31 s/d 17:59)
+    } else {
+      strStatus = "Leave";    // Di luar jam operasional
+    }
+  }
+
+  void onSubmitPressed() {
+    if (widget.image == null) {
+      _showSnackBar("Ambil foto selfie terlebih dahulu.", Icons.camera_front);
+      return;
+    }
+    if (nameController.text.trim().isEmpty) {
+      _showSnackBar("Nama wajib diisi.", Icons.person_outline);
+      return;
+    }
+    setStatusAbsen();
+    strDateTime = DateFormat('dd MMMM yyyy HH:mm:ss').format(DateTime.now());
+    submitAbsen(strAlamat, nameController.text, strStatus);
+  }
+
+  Future<void> submitAbsen(String alamat, String nama, String status) async {
+    _showLoaderDialog();
+
+    try {
+      await dataCollection.add({
+        'name': nama.trim(),
+        'address': alamat.isEmpty ? 'Lokasi tidak terekam' : alamat,
+        'description': status,
+        'datetime': strDateTime,
+        'latitude': dLat,
+        'longitude': dLong,
+        'type': 'attendance',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _showSnackBar("Presensi berhasil disimpan ($status).", Icons.check_circle_outline);
+
+      // Kembali ke HomeScreen yang sudah ada di bawah stack
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      _showSnackBar("Gagal menyimpan presensi: $e", Icons.error_outline);
+    }
+  }
+
+  void _showLoaderDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
   }
 
   void openCamera() {
@@ -132,6 +211,18 @@ class _AttendScreenState extends State<AttendScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20.0),
           children: [
+            TextField(
+              controller: nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: "Full Name",
+                prefixIcon: const Icon(Icons.person_outline),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text(
               "Selfie Photo",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -192,6 +283,18 @@ class _AttendScreenState extends State<AttendScreen> {
                       strAlamat.isEmpty ? "Lokasi belum didapat" : strAlamat,
                       style: const TextStyle(color: Colors.black87),
                     ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 52,
+              child: FilledButton.icon(
+                onPressed: isLoading ? null : onSubmitPressed,
+                icon: const Icon(Icons.send),
+                label: const Text(
+                  "Submit Attendance",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
         ),
