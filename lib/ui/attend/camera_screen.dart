@@ -13,7 +13,7 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> {
+class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
   CameraController? controller;
   bool isCameraReady = false;
   bool isBusy = false;
@@ -22,7 +22,23 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     initializeCamera();
+  }
+
+  // Lepas kamera saat aplikasi ke background, nyalakan lagi saat kembali.
+  // Tanpa ini kamera tetap terkunci dan preview jadi hitam setelah minimize.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive) {
+      final oldController = controller;
+      if (oldController == null) return;
+      controller = null;
+      if (mounted) setState(() => isCameraReady = false);
+      oldController.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      if (controller == null) initializeCamera();
+    }
   }
 
   Future<void> initializeCamera() async {
@@ -36,16 +52,19 @@ class _CameraScreenState extends State<CameraScreen> {
       orElse: () => cameras.first,
     );
 
-    controller = CameraController(
+    final newController = CameraController(
       frontCamera,
       ResolutionPreset.high,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
+    controller = newController;
 
     try {
-      await controller!.initialize();
-      if (mounted) setState(() => isCameraReady = true);
+      await newController.initialize();
+      // Bisa saja aplikasi sudah ke background & controller ini sudah dilepas
+      if (!mounted || controller != newController) return;
+      setState(() => isCameraReady = true);
     } catch (e) {
       debugPrint("Failed to initialize camera: $e");
     }
@@ -53,13 +72,20 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
     faceDetector.close();
     super.dispose();
   }
 
   Future<void> captureImage() async {
-    if (!isCameraReady || isBusy || controller!.value.isTakingPicture) return;
+    final cameraController = controller;
+    if (!isCameraReady ||
+        isBusy ||
+        cameraController == null ||
+        cameraController.value.isTakingPicture) {
+      return;
+    }
 
     showDialog(
       context: context,
@@ -68,7 +94,7 @@ class _CameraScreenState extends State<CameraScreen> {
     );
 
     try {
-      final imageFile = await controller!.takePicture();
+      final imageFile = await cameraController.takePicture();
       final inputImage = InputImage.fromFilePath(imageFile.path);
       await processImage(inputImage, imageFile);
     } catch (e) {
