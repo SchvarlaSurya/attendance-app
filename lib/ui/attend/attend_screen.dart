@@ -82,16 +82,25 @@ class _AttendScreenState extends State<AttendScreen> {
   }
 
   Future<void> getAddressFromLongLat(Position position) async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-    Placemark place = placemarks[0];
-    if (mounted) {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isEmpty) throw Exception("No placemark found");
+      if (mounted) {
+        final place = placemarks[0];
+        setState(() {
+          strAlamat = "${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}"
+              .replaceAll(RegExp(r'^[,\s]+|[,\s]+$'), '')
+              .replaceAll(RegExp(r',\s*,+'), ',');
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        strAlamat =
-            "${place.street}, ${place.subLocality}, ${place.locality}, "
-            "${place.subAdministrativeArea}, ${place.postalCode}, ${place.country}";
+        strAlamat = "Lat: ${position.latitude.toStringAsFixed(5)}, Long: ${position.longitude.toStringAsFixed(5)}";
         isLoading = false;
       });
     }
