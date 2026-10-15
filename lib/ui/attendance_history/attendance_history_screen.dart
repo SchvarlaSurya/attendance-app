@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:attendance_app/theme/app_tokens.dart';
+import 'package:attendance_app/ui/widgets/feedback.dart';
+import 'package:attendance_app/ui/widgets/status_badge.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -38,9 +41,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     try {
       await dataCollection.doc(docId).update(result);
-      _showSnackBar("Data berhasil diperbarui.", Icons.check_circle_outline);
+      _showSnackBar("Data berhasil diperbarui.", Icons.check_circle_outline_rounded);
     } catch (e) {
-      _showSnackBar("Gagal memperbarui data: $e", Icons.error_outline);
+      _showSnackBar("Gagal memperbarui data: $e", Icons.error_outline_rounded);
     }
   }
 
@@ -48,7 +51,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
+        icon: const Icon(Icons.warning_rounded, color: AppColors.danger, size: 40),
         title: const Text("Hapus Data?"),
         content: Text("Data presensi \"$name\" akan dihapus permanen dan tidak bisa dikembalikan."),
         actions: [
@@ -57,7 +60,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             child: const Text("Batal"),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateColor.resolveWith(
+                (states) => states.contains(WidgetState.pressed)
+                    ? AppColors.dangerPressed
+                    : AppColors.danger,
+              ),
+              foregroundColor: const WidgetStatePropertyAll(AppColors.onDanger),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text("Hapus"),
           ),
@@ -68,39 +78,38 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     try {
       await dataCollection.doc(docId).delete();
-      _showSnackBar("Data berhasil dihapus.", Icons.delete_outline);
+      _showSnackBar("Data berhasil dihapus.", Icons.delete_outline_rounded);
     } catch (e) {
-      _showSnackBar("Gagal menghapus data: $e", Icons.error_outline);
+      _showSnackBar("Gagal menghapus data: $e", Icons.error_outline_rounded);
     }
   }
 
   void _showSnackBar(String message, IconData icon) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
+    showAppSnackBar(context, message, icon);
   }
 
-  Color _statusColor(String description) {
-    switch (description) {
-      case 'Attend':
-        return Colors.green;
-      case 'Late':
-        return Colors.orange;
-      case 'Leave':
-        return Colors.red;
-      default:
-        return Colors.blue; // Sick / Permission / Others
-    }
+  // Inisial putih bila kontras dengan warna avatar minimal 3:1 (teks besar), selain itu gelap.
+  Color _avatarTextColor(Color background) {
+    final lum = background.computeLuminance();
+    final contrastWithWhite = 1.05 / (lum + 0.05);
+    return contrastWithWhite >= 3 ? AppColors.onPrimary : AppColors.textPrimary;
+  }
+
+  Widget _buildMetaRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.s2),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildAttendanceCard(
@@ -110,68 +119,38 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     String description,
     String datetime,
   ) {
-    final statusColor = _statusColor(description);
+    final textTheme = Theme.of(context).textTheme;
+    final avatarColor = _getAvatarColor(name);
 
     return Card(
       key: ValueKey(docId),
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: AppSpacing.s3),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.s4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              radius: 24,
-              backgroundColor: _getAvatarColor(name),
+              radius: AppSizes.avatar / 2,
+              backgroundColor: avatarColor,
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                style: textTheme.titleLarge!.copyWith(color: _avatarTextColor(avatarColor)),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.s4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: statusColor,
-                          ),
-                        ),
-                      ),
+                      Expanded(child: Text(name, style: textTheme.titleSmall)),
+                      const SizedBox(width: AppSpacing.s2),
+                      StatusBadge(description: description),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.black45),
+                        tooltip: "Opsi",
+                        icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
                         onSelected: (value) {
                           if (value == 'edit') {
                             _editData(docId, name, address, description, datetime);
@@ -183,51 +162,52 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           PopupMenuItem(
                             value: 'edit',
                             child: ListTile(
-                              leading: Icon(Icons.edit_outlined),
+                              leading: Icon(Icons.edit_rounded, color: AppColors.textSecondary),
                               title: Text("Edit"),
                             ),
                           ),
                           PopupMenuItem(
                             value: 'delete',
                             child: ListTile(
-                              leading: Icon(Icons.delete_outline, color: Colors.red),
-                              title: Text("Delete", style: TextStyle(color: Colors.red)),
+                              leading: Icon(Icons.delete_rounded, color: AppColors.danger),
+                              title: Text("Delete", style: TextStyle(color: AppColors.danger)),
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time, size: 14, color: Colors.black45),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          datetime,
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.black45),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          address,
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildMetaRow(Icons.schedule_rounded, datetime),
+                  const SizedBox(height: AppSpacing.s2),
+                  _buildMetaRow(Icons.location_on_rounded, address),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStateView({required Widget icon, String? message}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            if (message != null) ...[
+              const SizedBox(height: AppSpacing.s3),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 260),
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -240,20 +220,26 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       appBar: AppBar(title: const Text("Attendance History")),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s4, AppSpacing.s5, 0),
           child: StreamBuilder<QuerySnapshot>(
             stream: dataCollection.snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return _buildStateView(icon: const CircularProgressIndicator());
               }
 
               if (snapshot.hasError) {
-                return Center(child: Text("Gagal memuat riwayat: ${snapshot.error}"));
+                return _buildStateView(
+                  icon: const Icon(Icons.error_rounded, size: 48, color: AppColors.danger),
+                  message: "Gagal memuat riwayat: ${snapshot.error}",
+                );
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text("Belum ada riwayat presensi"));
+                return _buildStateView(
+                  icon: const Icon(Icons.history_rounded, size: 48, color: AppColors.textSecondary),
+                  message: "Belum ada riwayat presensi",
+                );
               }
 
               // Urutkan data berdasarkan created_at secara aman di memori
@@ -334,7 +320,6 @@ class _EditAttendanceDialogState extends State<_EditAttendanceDialog> {
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

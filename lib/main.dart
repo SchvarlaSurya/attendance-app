@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:attendance_app/theme/app_theme.dart';
 import 'package:attendance_app/ui/home_screen.dart';
 
 Future<void> main() async {
@@ -28,25 +29,7 @@ class AttendanceApp extends StatelessWidget {
     return MaterialApp(
       title: 'Attendance App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueAccent,
-          primary: const Color(0xFF1A008F),
-        ),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Color(0xFF1A008F),
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
+      theme: AppTheme.light(),
       home: const HomeScreen(),
     );
   }

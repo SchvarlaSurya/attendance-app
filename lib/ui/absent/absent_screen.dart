@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:attendance_app/theme/app_tokens.dart';
+import 'package:attendance_app/ui/widgets/feedback.dart';
 
 class AbsentScreen extends StatefulWidget {
   const AbsentScreen({super.key});
@@ -66,7 +68,7 @@ class _AbsentScreenState extends State<AbsentScreen> {
 
     final format = DateFormat('dd/MM/yyyy');
     if (format.parse(until).isBefore(format.parse(from))) {
-      _showSnackBar("Tanggal selesai tidak boleh sebelum tanggal mulai.", Icons.event_busy);
+      _showSnackBar("Tanggal selesai tidak boleh sebelum tanggal mulai.", Icons.event_busy_rounded);
       return;
     }
 
@@ -75,101 +77,92 @@ class _AbsentScreenState extends State<AbsentScreen> {
       await submitPermission(nama, selectedCategory!, from, until);
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      _showSnackBar("Pengajuan izin berhasil dikirim.", Icons.check_circle_outline);
+      _showSnackBar("Pengajuan izin berhasil dikirim.", Icons.check_circle_outline_rounded);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      _showSnackBar("Gagal mengirim pengajuan izin: $e", Icons.error_outline);
+      _showSnackBar("Gagal mengirim pengajuan izin: $e", Icons.error_outline_rounded);
     }
   }
 
-  void _showLoaderDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-  }
+  void _showLoaderDialog() => showLoaderDialog(context);
 
   void _showSnackBar(String message, IconData icon) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
+    showAppSnackBar(context, message, icon);
   }
 
   InputDecoration _decoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Permission / Leave")),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s5,
+            vertical: AppSpacing.s4,
+          ),
           children: [
             TextField(
               controller: nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: _decoration("Full Name", Icons.person_outline),
+              style: textTheme.bodyLarge,
+              decoration: _decoration("Full Name", Icons.person_outline_rounded),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.s4),
             DropdownButtonFormField<String>(
               initialValue: selectedCategory,
-              decoration: _decoration("Description", Icons.description_outlined),
+              style: textTheme.bodyLarge,
+              dropdownColor: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.field),
+              icon: const Icon(Icons.arrow_drop_down_rounded),
+              decoration: _decoration("Description", Icons.description_rounded),
               items: categories
                   .map((item) => DropdownMenuItem(value: item, child: Text(item)))
                   .toList(),
               onChanged: (value) => setState(() => selectedCategory = value),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.s4),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: fromController,
                     readOnly: true,
+                    style: textTheme.bodyLarge,
                     onTap: () => _pickDate(fromController),
-                    decoration: _decoration("From", Icons.calendar_today),
+                    decoration: _decoration("From", Icons.calendar_today_rounded),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: TextField(
                     controller: untilController,
                     readOnly: true,
+                    style: textTheme.bodyLarge,
                     onTap: () => _pickDate(untilController),
-                    decoration: _decoration("Until", Icons.event),
+                    decoration: _decoration("Until", Icons.event_rounded),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.s8),
             SizedBox(
-              height: 52,
+              height: AppSizes.buttonHeight,
               child: FilledButton.icon(
                 onPressed: onSubmitPressed,
-                icon: const Icon(Icons.send),
-                label: const Text(
-                  "Submit Permission",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                icon: const Icon(Icons.send_rounded),
+                label: const Text("Submit Permission"),
               ),
             ),
           ],

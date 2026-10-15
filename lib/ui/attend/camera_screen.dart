@@ -3,7 +3,9 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:lottie/lottie.dart';
+import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/attend/attend_screen.dart';
+import 'package:attendance_app/ui/widgets/feedback.dart';
 import 'package:attendance_app/utils/face_detection/google_ml_kit.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -87,11 +89,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoaderDialog(context);
 
     try {
       final imageFile = await cameraController.takePicture();
@@ -100,7 +98,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     } catch (e) {
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        _showSnackBar("Gagal mengambil foto: $e", Icons.error_outline);
+        _showSnackBar("Gagal mengambil foto: $e", Icons.error_outline_rounded);
       }
     }
   }
@@ -136,30 +134,19 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       isBusy = false;
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        _showSnackBar("Gagal memproses deteksi wajah: $e", Icons.error_outline);
+        _showSnackBar("Gagal memproses deteksi wajah: $e", Icons.error_outline_rounded);
       }
     }
   }
 
   void _showSnackBar(String message, IconData icon) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
+    showAppSnackBar(context, message, icon);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.cameraGround,
       appBar: AppBar(title: const Text("Face Scanner")),
       body: Stack(
         alignment: Alignment.center,
@@ -167,23 +154,26 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
           if (isCameraReady)
             Positioned.fill(child: CameraPreview(controller!))
           else
-            const CircularProgressIndicator(),
+            const CircularProgressIndicator(
+              color: AppColors.accent,
+              backgroundColor: AppColors.inverseSurface,
+            ),
           DottedBorder(
             borderType: BorderType.RRect,
-            radius: const Radius.circular(24),
+            radius: const Radius.circular(AppRadius.frame),
             dashPattern: const [8, 4],
-            color: Colors.blueAccent,
+            color: AppColors.accent,
             strokeWidth: 2,
             child: SizedBox(
-              width: 260,
-              height: 340,
+              width: AppSizes.scannerFrameWidth,
+              height: AppSizes.scannerFrameHeight,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Lottie.asset(
                     'assets/raw/face_id_ring.json',
-                    width: 240,
-                    height: 240,
+                    width: AppSizes.scannerRing,
+                    height: AppSizes.scannerRing,
                     fit: BoxFit.contain,
                     // Kosong selama face_id_ring.json belum ditaruh di assets/raw/.
                     errorBuilder: (context, error, stackTrace) =>
@@ -194,13 +184,19 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
             ),
           ),
           Positioned(
-            bottom: 32,
-            child: FloatingActionButton.large(
-              onPressed: captureImage,
-              backgroundColor: Colors.white,
-              child: const Icon(
-                Icons.camera_alt,
-                color: Color(0xFF1A008F),
+            bottom: AppSpacing.s8,
+            child: SizedBox.square(
+              dimension: AppSizes.shutter,
+              child: FloatingActionButton.large(
+                onPressed: captureImage,
+                tooltip: "Ambil foto",
+                backgroundColor: AppColors.surface,
+                foregroundColor: AppColors.primary,
+                splashColor: AppColors.surfaceMuted,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.frame),
+                ),
+                child: const Icon(Icons.photo_camera_rounded, size: 36),
               ),
             ),
           ),

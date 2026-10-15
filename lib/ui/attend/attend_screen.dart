@@ -2,11 +2,14 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/attend/camera_screen.dart';
+import 'package:attendance_app/ui/widgets/feedback.dart';
 
 class AttendScreen extends StatefulWidget {
   final XFile? image;
@@ -58,11 +61,11 @@ class _AttendScreenState extends State<AttendScreen> {
 
   void onSubmitPressed() {
     if (widget.image == null) {
-      _showSnackBar("Ambil foto selfie terlebih dahulu.", Icons.camera_front);
+      _showSnackBar("Ambil foto selfie terlebih dahulu.", Icons.camera_front_rounded);
       return;
     }
     if (nameController.text.trim().isEmpty) {
-      _showSnackBar("Nama wajib diisi.", Icons.person_outline);
+      _showSnackBar("Nama wajib diisi.", Icons.person_outline_rounded);
       return;
     }
     setStatusAbsen();
@@ -87,24 +90,18 @@ class _AttendScreenState extends State<AttendScreen> {
 
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      _showSnackBar("Presensi berhasil disimpan ($status).", Icons.check_circle_outline);
+      _showSnackBar("Presensi berhasil disimpan ($status).", Icons.check_circle_outline_rounded);
 
       // Kembali ke HomeScreen yang sudah ada di bawah stack
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
-      _showSnackBar("Gagal menyimpan presensi: $e", Icons.error_outline);
+      _showSnackBar("Gagal menyimpan presensi: $e", Icons.error_outline_rounded);
     }
   }
 
-  void _showLoaderDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-  }
+  void _showLoaderDialog() => showLoaderDialog(context);
 
   void openCamera() {
     Navigator.push(
@@ -116,7 +113,7 @@ class _AttendScreenState extends State<AttendScreen> {
   Future<bool> handleLocationPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      _showSnackBar("Layanan GPS tidak aktif. Silakan aktifkan GPS perangkat Anda.", Icons.location_off);
+      _showSnackBar("Layanan GPS tidak aktif. Silakan aktifkan GPS perangkat Anda.", Icons.location_off_rounded);
       return false;
     }
 
@@ -130,7 +127,7 @@ class _AttendScreenState extends State<AttendScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      _showSnackBar("Izin lokasi ditolak permanen. Buka pengaturan aplikasi untuk mengizinkan.", Icons.error_outline);
+      _showSnackBar("Izin lokasi ditolak permanen. Buka pengaturan aplikasi untuk mengizinkan.", Icons.error_outline_rounded);
       return false;
     }
 
@@ -187,118 +184,154 @@ class _AttendScreenState extends State<AttendScreen> {
 
   void _showSnackBar(String message, IconData icon) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Row(
+    showAppSnackBar(context, message, icon);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Attendance Record")),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s5,
+            vertical: AppSpacing.s4,
+          ),
           children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            TextField(
+              controller: nameController,
+              textCapitalization: TextCapitalization.words,
+              style: textTheme.bodyLarge,
+              decoration: const InputDecoration(
+                labelText: "Full Name",
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s6),
+            Text("Selfie Photo", style: textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.s3),
+            _buildSelfieBox(textTheme),
+            const SizedBox(height: AppSpacing.s6),
+            Row(
+              children: [
+                Expanded(child: Text("Your Location", style: textTheme.titleSmall)),
+                IconButton(
+                  tooltip: "Refresh location",
+                  color: AppColors.primary,
+                  disabledColor: AppColors.onDisabled,
+                  onPressed: isLoading ? null : getGeoLocationPosition,
+                  icon: const Icon(Icons.my_location_rounded),
+                ),
+              ],
+            ),
+            _buildLocationPanel(textTheme),
+            const SizedBox(height: AppSpacing.s8),
+            SizedBox(
+              height: AppSizes.buttonHeight,
+              child: FilledButton.icon(
+                onPressed: isLoading ? null : onSubmitPressed,
+                icon: const Icon(Icons.send_rounded),
+                label: const Text("Submit Attendance"),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSelfieBox(TextTheme textTheme) {
     final image = widget.image;
+    final radius = BorderRadius.circular(AppRadius.card);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Attendance Record")),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20.0),
-          children: [
-            TextField(
-              controller: nameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(
-                labelText: "Full Name",
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "Selfie Photo",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: openCamera,
-              child: Container(
-                height: 320,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: image != null
-                    ? Image.file(File(image.path), fit: BoxFit.cover)
-                    : const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.camera_front, size: 64, color: Colors.grey),
-                          SizedBox(height: 8),
-                          Text(
-                            "Tap to take selfie",
-                            style: TextStyle(color: Colors.black54),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
+    if (image != null) {
+      return Material(
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: Ink.image(
+          image: FileImage(File(image.path)),
+          fit: BoxFit.cover,
+          height: AppSizes.selfieHeight,
+          child: InkWell(onTap: openCamera),
+        ),
+      );
+    }
+
+    // Garis putus menandai slot foto yang wajib diisi.
+    return DottedBorder(
+      borderType: BorderType.RRect,
+      radius: const Radius.circular(AppRadius.card),
+      dashPattern: const [6, 4],
+      color: AppColors.outline,
+      strokeWidth: 1,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: AppColors.surfaceMuted,
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: openCamera,
+          splashColor: AppColors.primaryContainer,
+          highlightColor: AppColors.primaryContainer,
+          child: SizedBox(
+            height: AppSizes.selfieHeight,
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Expanded(
-                  child: Text(
-                    "Your Location",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(
-                  tooltip: "Refresh location",
-                  onPressed: isLoading ? null : getGeoLocationPosition,
-                  icon: const Icon(Icons.my_location),
+                const Icon(Icons.camera_front_rounded, size: 64, color: AppColors.textSecondary),
+                const SizedBox(height: AppSpacing.s2),
+                Text(
+                  "Tap to take selfie",
+                  style: textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Text(
-                      strAlamat.isEmpty ? "Lokasi belum didapat" : strAlamat,
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: isLoading ? null : onSubmitPressed,
-                icon: const Icon(Icons.send),
-                label: const Text(
-                  "Submit Attendance",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLocationPanel(TextTheme textTheme) {
+    final hasAddress = strAlamat.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      constraints: const BoxConstraints(minHeight: 56),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: isLoading
+          ? const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  hasAddress ? Icons.location_on_rounded : Icons.location_off_rounded,
+                  color: hasAddress ? AppColors.primary : AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSpacing.s3),
+                Expanded(
+                  child: Text(
+                    hasAddress ? strAlamat : "Lokasi belum didapat",
+                    style: textTheme.bodyMedium!.copyWith(
+                      color: hasAddress ? AppColors.textPrimary : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

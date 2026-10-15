@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/attend/attend_screen.dart';
 import 'package:attendance_app/ui/absent/absent_screen.dart';
 import 'package:attendance_app/ui/attendance_history/attendance_history_screen.dart';
@@ -8,96 +9,85 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance - XI RPL"),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              const Text(
-                "Welcome to Attendance App",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A008F),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "Select a menu to proceed",
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: ListView(
-                  children: [
-                    _HomeMenuCard(
-                      title: "Attendance Record",
-                      subtitle: "Take selfie photo and record your attendance",
-                      imagePath: 'assets/images/ic_absen.png',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AttendScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _HomeMenuCard(
-                      title: "Permission / Leave",
-                      subtitle: "Submit leave request for sick or permission",
-                      imagePath: 'assets/images/ic_leave.png',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AbsentScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _HomeMenuCard(
-                      title: "Attendance History",
-                      subtitle: "View and manage all attendance history records",
-                      imagePath: 'assets/images/ic_history.png',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const AttendanceHistoryScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s5, AppSpacing.s6, AppSpacing.s5, AppSpacing.s4,
           ),
+          children: [
+            Text(
+              "Welcome to Attendance App",
+              style: textTheme.titleLarge!.copyWith(color: AppColors.primary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.s1),
+            Text(
+              "Select a menu to proceed",
+              style: textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.s6),
+            _HomeMenuCard(
+              title: "Attendance Record",
+              subtitle: "Take selfie photo and record your attendance",
+              imagePath: 'assets/images/ic_absen.png',
+              fallbackIcon: Icons.photo_camera_front_rounded,
+              isPrimary: true,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AttendScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            _HomeMenuCard(
+              title: "Permission / Leave",
+              subtitle: "Submit leave request for sick or permission",
+              imagePath: 'assets/images/ic_leave.png',
+              fallbackIcon: Icons.assignment_rounded,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AbsentScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            _HomeMenuCard(
+              title: "Attendance History",
+              subtitle: "View and manage all attendance history records",
+              imagePath: 'assets/images/ic_history.png',
+              fallbackIcon: Icons.history_rounded,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AttendanceHistoryScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: Container(
-        height: 48,
-        color: const Color(0xFF1A008F),
+        height: AppSizes.footerHeight,
+        color: AppColors.primary,
         alignment: Alignment.center,
-        child: const Text(
+        child: Text(
           "IDN Boarding School Solo",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+          style: textTheme.labelMedium!.copyWith(color: AppColors.onPrimary),
         ),
       ),
     );
@@ -108,71 +98,73 @@ class _HomeMenuCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String imagePath;
+  final IconData fallbackIcon;
+  final bool isPrimary;
   final VoidCallback onTap;
 
   const _HomeMenuCard({
     required this.title,
     required this.subtitle,
     required this.imagePath,
+    required this.fallbackIcon,
     required this.onTap,
+    this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final slotColor = isPrimary ? AppColors.primary : AppColors.primaryContainer;
+    final slotIconColor = isPrimary ? AppColors.onPrimary : AppColors.onPrimaryContainer;
+
     return Card(
-      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: BorderSide(color: isPrimary ? AppColors.primary : AppColors.border),
       ),
-      color: Colors.white,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        splashColor: AppColors.surfaceMuted,
+        highlightColor: AppColors.surfaceMuted,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.s4),
           child: Row(
             children: [
-              Image.asset(
-                imagePath,
-                width: 64,
-                height: 64,
-                fit: BoxFit.contain,
-                // Fallback selama file ikon belum ditaruh di assets/images/.
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.image_not_supported_outlined,
-                  size: 64,
-                  color: Colors.grey,
+              Container(
+                width: AppSizes.menuSlot,
+                height: AppSizes.menuSlot,
+                decoration: BoxDecoration(
+                  color: slotColor,
+                  borderRadius: BorderRadius.circular(AppRadius.field),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                  // Ikon Rounded selama file ikon belum ditaruh di assets/images/.
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(fallbackIcon, size: 32, color: slotIconColor),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.s4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+                    Text(title, style: textTheme.titleSmall),
+                    const SizedBox(height: AppSpacing.s1),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
+                      style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
               const Icon(
-                Icons.arrow_forward_ios,
+                Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Colors.grey,
+                color: AppColors.textSecondary,
               ),
             ],
           ),
