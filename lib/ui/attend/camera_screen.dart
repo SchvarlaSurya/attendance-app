@@ -18,7 +18,8 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver {
+class _CameraScreenState extends State<CameraScreen>
+    with WidgetsBindingObserver {
   CameraController? controller;
   bool isCameraReady = false;
   bool isBusy = false;
@@ -123,7 +124,8 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => AttendScreen(session: widget.session, image: imageFile),
+            builder: (context) =>
+                AttendScreen(session: widget.session, image: imageFile),
           ),
           (route) => route.isFirst,
         );
@@ -137,7 +139,10 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
       isBusy = false;
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        _showSnackBar("Gagal memproses deteksi wajah: $e", Icons.error_outline_rounded);
+        _showSnackBar(
+          "Gagal memproses deteksi wajah: $e",
+          Icons.error_outline_rounded,
+        );
       }
     }
   }
@@ -151,59 +156,61 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
     return Scaffold(
       backgroundColor: AppColors.cameraGround,
       appBar: AppBar(title: const Text("Face Scanner")),
-      body: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (isCameraReady)
-            Positioned.fill(child: CameraPreview(controller!))
-          else
-            const CircularProgressIndicator(
+      body: SizedBox.expand(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (isCameraReady)
+              Positioned.fill(child: CameraPreview(controller!))
+            else
+              const CircularProgressIndicator(
+                color: AppColors.accent,
+                backgroundColor: AppColors.inverseSurface,
+              ),
+            DottedBorder(
+              borderType: BorderType.RRect,
+              radius: const Radius.circular(AppRadius.frame),
+              dashPattern: const [8, 4],
               color: AppColors.accent,
-              backgroundColor: AppColors.inverseSurface,
-            ),
-          DottedBorder(
-            borderType: BorderType.RRect,
-            radius: const Radius.circular(AppRadius.frame),
-            dashPattern: const [8, 4],
-            color: AppColors.accent,
-            strokeWidth: 2,
-            child: SizedBox(
-              width: AppSizes.scannerFrameWidth,
-              height: AppSizes.scannerFrameHeight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Lottie.asset(
-                    'assets/raw/face_id_ring.json',
-                    width: AppSizes.scannerRing,
-                    height: AppSizes.scannerRing,
-                    fit: BoxFit.contain,
-                    // Kosong selama face_id_ring.json belum ditaruh di assets/raw/.
-                    errorBuilder: (context, error, stackTrace) =>
-                        const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: AppSpacing.s8,
-            child: SizedBox.square(
-              dimension: AppSizes.shutter,
-              child: FloatingActionButton.large(
-                onPressed: captureImage,
-                tooltip: "Ambil foto",
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.primary,
-                splashColor: AppColors.surfaceMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.frame),
+              strokeWidth: 2,
+              child: SizedBox(
+                width: AppSizes.scannerFrameWidth,
+                height: AppSizes.scannerFrameHeight,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Lottie.asset(
+                      'assets/raw/face_id_ring.json',
+                      width: AppSizes.scannerRing,
+                      height: AppSizes.scannerRing,
+                      fit: BoxFit.contain,
+                      // Kosong selama face_id_ring.json belum ditaruh di assets/raw/.
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.photo_camera_rounded, size: 36),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              bottom: AppSpacing.s8,
+              child: SizedBox.square(
+                dimension: AppSizes.shutter,
+                child: FloatingActionButton.large(
+                  onPressed: captureImage,
+                  tooltip: "Ambil foto",
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: AppColors.primary,
+                  splashColor: AppColors.surfaceMuted,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.frame),
+                  ),
+                  child: const Icon(Icons.photo_camera_rounded, size: 36),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

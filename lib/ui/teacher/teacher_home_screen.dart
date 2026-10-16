@@ -23,6 +23,10 @@ class TeacherHomeView extends StatefulWidget {
 }
 
 class _TeacherHomeViewState extends State<TeacherHomeView> {
+  late final Stream<QuerySnapshot> _sessionsStream = FirebaseFirestore.instance
+      .collection('sessions')
+      .where('teacher_uid', isEqualTo: widget.user.uid)
+      .snapshots();
   Timer? _ticker;
 
   @override
@@ -96,10 +100,7 @@ class _TeacherHomeViewState extends State<TeacherHomeView> {
         Text("Today's Sessions", style: textTheme.titleSmall),
         const SizedBox(height: AppSpacing.s3),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('sessions')
-              .where('teacher_uid', isEqualTo: widget.user.uid)
-              .snapshots(),
+          stream: _sessionsStream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const StateView.loading();

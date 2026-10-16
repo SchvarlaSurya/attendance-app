@@ -21,8 +21,11 @@ class SessionQrScreen extends StatefulWidget {
 }
 
 class _SessionQrScreenState extends State<SessionQrScreen> {
-  late final DocumentReference sessionRef =
-      FirebaseFirestore.instance.collection('sessions').doc(widget.sessionId);
+  late final DocumentReference sessionRef = FirebaseFirestore.instance
+      .collection('sessions')
+      .doc(widget.sessionId);
+  // Dibuat sekali: stream baru di tiap build (tiap detik) membuat layar kembali ke loading dan berkedip.
+  late final Stream<DocumentSnapshot> _sessionStream = sessionRef.snapshots();
   Timer? _ticker;
 
   @override
@@ -43,9 +46,15 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.warning_rounded, color: AppColors.danger, size: 40),
+        icon: const Icon(
+          Icons.warning_rounded,
+          color: AppColors.danger,
+          size: 40,
+        ),
         title: const Text("Akhiri Sesi?"),
-        content: const Text("QR langsung tidak berlaku dan siswa tidak bisa absen lagi di sesi ini."),
+        content: const Text(
+          "QR langsung tidak berlaku dan siswa tidak bisa absen lagi di sesi ini.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -70,16 +79,22 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
 
     try {
       await sessionRef.update({'active': false});
-      if (mounted) showAppSnackBar(context, "Sesi diakhiri.", Icons.stop_circle_outlined);
+      if (mounted) {
+        showAppSnackBar(context, "Sesi diakhiri.", Icons.stop_circle_outlined);
+      }
     } catch (e) {
-      if (mounted) showAppSnackBar(context, "Gagal mengakhiri sesi: $e", Icons.error_outline_rounded);
+      if (mounted) {
+        showAppSnackBar(context, "Gagal mengakhiri sesi: $e", Icons.error_outline_rounded);
+      }
     }
   }
 
   void _openRecap() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => SessionRecapScreen(sessionId: widget.sessionId)),
+      MaterialPageRoute(
+        builder: (context) => SessionRecapScreen(sessionId: widget.sessionId),
+      ),
     );
   }
 
@@ -89,7 +104,7 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
       appBar: AppBar(title: const Text("Session QR")),
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
-          stream: sessionRef.snapshots(),
+          stream: _sessionStream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const StateView.loading();
@@ -98,7 +113,10 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
               return StateView.error("Gagal memuat sesi: ${snapshot.error}");
             }
             if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const StateView(icon: Icons.search_off_rounded, message: "Sesi tidak ditemukan.");
+              return const StateView(
+                icon: Icons.search_off_rounded,
+                message: "Sesi tidak ditemukan.",
+              );
             }
             return _buildContent(AttendanceSession.fromDoc(snapshot.data!));
           },
@@ -110,11 +128,15 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
   Widget _buildContent(AttendanceSession session) {
     final textTheme = Theme.of(context).textTheme;
     final state = sessionStateOf(session);
-    final isOpen = state == SessionState.active || state == SessionState.almostExpired;
+    final isOpen =
+        state == SessionState.active || state == SessionState.almostExpired;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.s5, AppSpacing.s4, AppSpacing.s5, AppSpacing.s4,
+        AppSpacing.s5,
+        AppSpacing.s4,
+        AppSpacing.s5,
+        AppSpacing.s4,
       ),
       children: [
         Row(
@@ -126,7 +148,9 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
                   Text(session.className, style: textTheme.titleLarge),
                   Text(
                     session.subject,
-                    style: textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
+                    style: textTheme.bodyMedium!.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -160,7 +184,9 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.danger,
                 side: const BorderSide(color: AppColors.danger),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
                 textStyle: textTheme.labelLarge,
               ),
               onPressed: _endSession,
@@ -178,14 +204,19 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
       children: [
         Semantics(
           label: "QR sesi ${session.className}",
-          child: QrImageView(
-            data: session.qrData,
-            size: AppSizes.scannerRing,
-            backgroundColor: AppColors.surface,
-            eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.textPrimary),
-            dataModuleStyle: const QrDataModuleStyle(
-              dataModuleShape: QrDataModuleShape.square,
-              color: AppColors.textPrimary,
+          child: RepaintBoundary(
+            child: QrImageView(
+              data: session.qrData,
+              size: AppSizes.scannerRing,
+              backgroundColor: AppColors.surface,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: AppColors.textPrimary,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ),
@@ -193,7 +224,9 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
         Text(
           "Minta siswa memindai QR ini dari menu Attendance Record",
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -220,7 +253,9 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
           Text(
             "Siswa tidak bisa absen lagi di sesi ini.",
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium!.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -232,29 +267,47 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
     final almost = state == SessionState.almostExpired;
     final open = state == SessionState.active || almost;
 
-    final background = almost ? AppColors.statusLateContainer : AppColors.surfaceMuted;
-    final foreground = almost ? AppColors.statusLateOnContainer : AppColors.textPrimary;
+    final background = almost
+        ? AppColors.statusLateContainer
+        : AppColors.surfaceMuted;
+    final foreground = almost
+        ? AppColors.statusLateOnContainer
+        : AppColors.textPrimary;
     final label = !open
         ? "Masa berlaku habis"
         : almost
-            ? "QR hampir kedaluwarsa"
-            : "QR berlaku";
+        ? "QR hampir kedaluwarsa"
+        : "QR berlaku";
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s4,
+        vertical: AppSpacing.s3,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: almost ? AppColors.statusLate : AppColors.border),
+        border: Border.all(
+          color: almost ? AppColors.statusLate : AppColors.border,
+        ),
       ),
       child: Row(
         children: [
           Icon(
-            open ? (almost ? Icons.timer_rounded : Icons.timer_outlined) : Icons.timer_off_rounded,
-            color: almost ? AppColors.statusLateOnContainer : AppColors.textSecondary,
+            open
+                ? (almost ? Icons.timer_rounded : Icons.timer_outlined)
+                : Icons.timer_off_rounded,
+            color: almost
+                ? AppColors.statusLateOnContainer
+                : AppColors.textSecondary,
           ),
           const SizedBox(width: AppSpacing.s3),
-          Expanded(child: Text(label, style: textTheme.bodyMedium!.copyWith(color: foreground))),
+          Expanded(
+            child: Text(
+              label,
+              style: textTheme.bodyMedium!.copyWith(color: foreground),
+            ),
+          ),
           Text(
             formatCountdown(open ? session.remaining : Duration.zero),
             style: textTheme.titleLarge!.copyWith(

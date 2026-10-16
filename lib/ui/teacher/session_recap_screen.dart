@@ -7,10 +7,23 @@ import 'package:attendance_app/ui/widgets/state_view.dart';
 import 'package:attendance_app/ui/widgets/status_badge.dart';
 
 /// Rekap satu sesi: jumlah per status + daftar siswa yang sudah absen.
-class SessionRecapScreen extends StatelessWidget {
+class SessionRecapScreen extends StatefulWidget {
   final String sessionId;
 
   const SessionRecapScreen({super.key, required this.sessionId});
+
+  @override
+  State<SessionRecapScreen> createState() => _SessionRecapScreenState();
+}
+
+class _SessionRecapScreenState extends State<SessionRecapScreen> {
+  // Stream dibuat sekali supaya daftar tidak kembali ke loading tiap kali data berubah.
+  late final Stream<DocumentSnapshot> _sessionStream =
+      FirebaseFirestore.instance.collection('sessions').doc(widget.sessionId).snapshots();
+  late final Stream<QuerySnapshot> _attendanceStream = FirebaseFirestore.instance
+      .collection('attendance')
+      .where('session_id', isEqualTo: widget.sessionId)
+      .snapshots();
 
   Future<void> _changeStatus(BuildContext context, String docId, String name, String current) async {
     final selected = await showDialog<String>(
@@ -72,17 +85,14 @@ class SessionRecapScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("Class Recap")),
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('sessions').doc(sessionId).snapshots(),
+          stream: _sessionStream,
           builder: (context, sessionSnapshot) {
             final session = sessionSnapshot.data?.exists == true
                 ? AttendanceSession.fromDoc(sessionSnapshot.data!)
                 : null;
 
             return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('attendance')
-                  .where('session_id', isEqualTo: sessionId)
-                  .snapshots(),
+              stream: _attendanceStream,
               builder: (context, snapshot) {
                 final header = <Widget>[
                   if (session != null) ...[
