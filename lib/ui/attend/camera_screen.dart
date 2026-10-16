@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -23,7 +24,12 @@ class _CameraScreenState extends State<CameraScreen>
   CameraController? controller;
   bool isCameraReady = false;
   bool isBusy = false;
-  final FaceDetector faceDetector = GoogleMlKit.vision.faceDetector();
+  // ML Kit hanya ada di Android/iOS. Di Chrome/desktop deteksi wajah dilewati.
+  static final bool faceDetectionSupported = !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+  final FaceDetector? faceDetector =
+      faceDetectionSupported ? GoogleMlKit.vision.faceDetector() : null;
 
   @override
   void initState() {
@@ -80,7 +86,7 @@ class _CameraScreenState extends State<CameraScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
-    faceDetector.close();
+    faceDetector?.close();
     super.dispose();
   }
 
@@ -97,6 +103,12 @@ class _CameraScreenState extends State<CameraScreen>
 
     try {
       final imageFile = await cameraController.takePicture();
+      if (faceDetector == null) {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+        _openForm(imageFile);
+        return;
+      }
       final inputImage = InputImage.fromFilePath(imageFile.path);
       await processImage(inputImage, imageFile);
     } catch (e) {
@@ -112,7 +124,7 @@ class _CameraScreenState extends State<CameraScreen>
     isBusy = true;
 
     try {
-      final faces = await faceDetector.processImage(inputImage);
+      final faces = await faceDetector!.processImage(inputImage);
       isBusy = false;
 
       if (!mounted) return;
@@ -120,15 +132,7 @@ class _CameraScreenState extends State<CameraScreen>
 
       if (faces.isNotEmpty) {
         // Wajah asli terdeteksi -> Lanjut ke layar form konfirmasi presensi.
-        // Buang form kosong & kamera dari stack supaya Back langsung ke Home.
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                AttendScreen(session: widget.session, image: imageFile),
-          ),
-          (route) => route.isFirst,
-        );
+        _openForm(imageFile);
       } else {
         _showSnackBar(
           "Wajah tidak terdeteksi! Pastikan wajah terlihat jelas di bingkai.",
@@ -145,6 +149,18 @@ class _CameraScreenState extends State<CameraScreen>
         );
       }
     }
+  }
+
+  // Buang form kosong & kamera dari stack supaya Back langsung ke Home.
+  void _openForm(XFile imageFile) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AttendScreen(session: widget.session, image: imageFile),
+      ),
+      (route) => route.isFirst,
+    );
   }
 
   void _showSnackBar(String message, IconData icon) {

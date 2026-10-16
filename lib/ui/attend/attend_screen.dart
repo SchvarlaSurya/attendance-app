@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -305,7 +306,7 @@ class _AttendScreenState extends State<AttendScreen> {
         borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: Ink.image(
-          image: FileImage(File(image.path)),
+          image: kIsWeb ? NetworkImage(image.path) : FileImage(File(image.path)),
           fit: BoxFit.cover,
           height: AppSizes.selfieHeight,
           child: InkWell(onTap: openCamera),
