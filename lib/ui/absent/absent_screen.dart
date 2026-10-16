@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:attendance_app/services/user_service.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/widgets/feedback.dart';
 
@@ -52,6 +53,7 @@ class _AbsentScreenState extends State<AbsentScreen> {
       'description': keterangan,
       'datetime': '$from - $until',
       'type': 'permission',
+      'uid': UserService.current.value?.uid,
       'created_at': FieldValue.serverTimestamp(),
     });
   }

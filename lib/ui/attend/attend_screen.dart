@@ -7,14 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:attendance_app/models/attendance_session.dart';
+import 'package:attendance_app/services/user_service.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/attend/camera_screen.dart';
 import 'package:attendance_app/ui/widgets/feedback.dart';
 
 class AttendScreen extends StatefulWidget {
+  final AttendanceSession session;
   final XFile? image;
 
-  const AttendScreen({super.key, this.image});
+  const AttendScreen({super.key, required this.session, this.image});
 
   @override
   State<AttendScreen> createState() => _AttendScreenState();
@@ -28,7 +31,9 @@ class _AttendScreenState extends State<AttendScreen> {
   String strDateTime = "";
   bool isLoading = false;
 
-  final nameController = TextEditingController();
+  final nameController = TextEditingController(
+    text: UserService.current.value?.name ?? '',
+  );
   final CollectionReference dataCollection =
       FirebaseFirestore.instance.collection('attendance');
 
@@ -77,6 +82,18 @@ class _AttendScreenState extends State<AttendScreen> {
     _showLoaderDialog();
 
     try {
+      // QR bisa kedaluwarsa selama siswa mengisi form.
+      final sessionDoc = await FirebaseFirestore.instance
+          .collection('sessions')
+          .doc(widget.session.id)
+          .get();
+      if (!sessionDoc.exists || !AttendanceSession.fromDoc(sessionDoc).isOpen) {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop();
+        _showSnackBar("Sesi sudah berakhir. Presensi tidak bisa dikirim.", Icons.timer_off_rounded);
+        return;
+      }
+
       await dataCollection.add({
         'name': nama.trim(),
         'address': alamat.isEmpty ? 'Lokasi tidak terekam' : alamat,
@@ -85,6 +102,9 @@ class _AttendScreenState extends State<AttendScreen> {
         'latitude': dLat,
         'longitude': dLong,
         'type': 'attendance',
+        'uid': UserService.current.value?.uid,
+        'session_id': widget.session.id,
+        'class_name': widget.session.className,
         'created_at': FieldValue.serverTimestamp(),
       });
 
@@ -106,7 +126,7 @@ class _AttendScreenState extends State<AttendScreen> {
   void openCamera() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const CameraScreen()),
+      MaterialPageRoute(builder: (context) => CameraScreen(session: widget.session)),
     );
   }
 
@@ -200,6 +220,8 @@ class _AttendScreenState extends State<AttendScreen> {
             vertical: AppSpacing.s4,
           ),
           children: [
+            _buildSessionInfo(textTheme),
+            const SizedBox(height: AppSpacing.s6),
             TextField(
               controller: nameController,
               textCapitalization: TextCapitalization.words,
@@ -238,6 +260,38 @@ class _AttendScreenState extends State<AttendScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSessionInfo(TextTheme textTheme) {
+    final session = widget.session;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.qr_code_rounded, color: AppColors.onPrimaryContainer),
+          const SizedBox(width: AppSpacing.s3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${session.className} · ${session.subject}",
+                  style: textTheme.titleSmall!.copyWith(color: AppColors.onPrimaryContainer),
+                ),
+                Text(
+                  session.teacherName,
+                  style: textTheme.bodySmall!.copyWith(color: AppColors.onPrimaryContainer),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,7 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:attendance_app/services/user_service.dart';
 import 'package:attendance_app/theme/app_theme.dart';
-import 'package:attendance_app/ui/home_screen.dart';
+import 'package:attendance_app/ui/auth/auth_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,7 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("Firebase connection failed: $e");
   }
+  await UserService.load();
   runApp(const AttendanceApp());
 }
 
@@ -30,7 +32,7 @@ class AttendanceApp extends StatelessWidget {
       title: 'Attendance App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const HomeScreen(),
+      home: const AuthGate(),
     );
   }
 }

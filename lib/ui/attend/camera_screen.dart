@@ -3,13 +3,16 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:lottie/lottie.dart';
+import 'package:attendance_app/models/attendance_session.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/attend/attend_screen.dart';
 import 'package:attendance_app/ui/widgets/feedback.dart';
 import 'package:attendance_app/utils/face_detection/google_ml_kit.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  final AttendanceSession session;
+
+  const CameraScreen({super.key, required this.session});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -120,7 +123,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => AttendScreen(image: imageFile),
+            builder: (context) => AttendScreen(session: widget.session, image: imageFile),
           ),
           (route) => route.isFirst,
         );

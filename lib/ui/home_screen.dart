@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
-import 'package:attendance_app/ui/attend/attend_screen.dart';
+import 'package:attendance_app/services/user_service.dart';
+import 'package:attendance_app/ui/attend/scan_qr_screen.dart';
 import 'package:attendance_app/ui/absent/absent_screen.dart';
 import 'package:attendance_app/ui/attendance_history/attendance_history_screen.dart';
+import 'package:attendance_app/ui/profile/profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final AppUser user;
+
+  const HomeScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +18,16 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Attendance - XI RPL"),
+        actions: [
+          IconButton(
+            tooltip: "Profile",
+            icon: const Icon(Icons.account_circle_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ProfileScreen(user: user)),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -43,7 +57,7 @@ class HomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AttendScreen(),
+                    builder: (context) => const ScanQrScreen(),
                   ),
                 );
               },

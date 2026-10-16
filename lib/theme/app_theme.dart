@@ -144,6 +144,26 @@ class AppTheme {
         color: AppColors.primary,
         circularTrackColor: AppColors.primaryContainer,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.primaryContainer,
+        elevation: 0,
+        labelTextStyle: WidgetStateTextStyle.resolveWith(
+          (states) => textTheme.labelSmall!.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.onPrimaryContainer
+                : AppColors.textSecondary,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.onPrimaryContainer
+                : AppColors.textSecondary,
+          ),
+        ),
+      ),
       datePickerTheme: DatePickerThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
