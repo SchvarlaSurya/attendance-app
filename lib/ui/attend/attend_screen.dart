@@ -179,7 +179,7 @@ class _AttendScreenState extends State<AttendScreen> {
 
   Future<void> getAddressFromLongLat(Position position) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
