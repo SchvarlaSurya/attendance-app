@@ -11,6 +11,9 @@ class AttendanceSession {
   final String teacherName;
   final DateTime? createdAt;
   final DateTime expiresAt;
+
+  /// Scan setelah waktu ini tercatat Late. Null untuk sesi lama sebelum fitur ini ada.
+  final DateTime? lateAt;
   final bool active;
 
   const AttendanceSession({
@@ -21,6 +24,7 @@ class AttendanceSession {
     required this.teacherName,
     required this.createdAt,
     required this.expiresAt,
+    this.lateAt,
     required this.active,
   });
 
@@ -34,6 +38,7 @@ class AttendanceSession {
       teacherName: data['teacher_name']?.toString() ?? '-',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
       expiresAt: (data['expires_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lateAt: (data['late_at'] as Timestamp?)?.toDate(),
       active: data['active'] as bool? ?? false,
     );
   }
@@ -48,6 +53,17 @@ class AttendanceSession {
   }
 
   bool get isOpen => active && DateTime.now().isBefore(expiresAt);
+
+  /// Status presensi untuk siswa yang memindai QR pada waktu [scannedAt].
+  String statusAt(DateTime scannedAt) {
+    final limit = lateAt;
+    return limit != null && scannedAt.isAfter(limit) ? 'Late' : 'Attend';
+  }
+
+  /// Pilihan batas terlambat (menit): selalu lebih pendek dari masa berlaku QR,
+  /// supaya status Late masih mungkin terjadi.
+  static List<int> lateAfterOptions(int validMinutes) =>
+      [2, 5, 10, 15].where((m) => m < validMinutes).toList();
 
   Duration get remaining {
     final left = expiresAt.difference(DateTime.now());

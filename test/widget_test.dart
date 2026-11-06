@@ -25,6 +25,31 @@ void main() {
     expect(AttendanceSession.idFromQr(null), isNull);
   });
 
+  test('Status follows the late limit set by the teacher', () {
+    final late = DateTime(2026, 11, 6, 9, 5);
+    final session = AttendanceSession(
+      id: 's1',
+      className: 'XI RPL',
+      subject: 'Mobile',
+      teacherUid: 't1',
+      teacherName: 'Guru',
+      createdAt: DateTime(2026, 11, 6, 9),
+      expiresAt: DateTime(2026, 11, 6, 9, 10),
+      active: true,
+      lateAt: late,
+    );
+
+    expect(session.statusAt(DateTime(2026, 11, 6, 9, 4, 59)), 'Attend');
+    expect(session.statusAt(late), 'Attend');
+    expect(session.statusAt(DateTime(2026, 11, 6, 9, 5, 1)), 'Late');
+  });
+
+  test('Late limit options stay shorter than QR validity', () {
+    expect(AttendanceSession.lateAfterOptions(5), [2]);
+    expect(AttendanceSession.lateAfterOptions(10), [2, 5]);
+    expect(AttendanceSession.lateAfterOptions(30), [2, 5, 10, 15]);
+  });
+
   test('Sessions are grouped by day label', () {
     final now = DateTime(2026, 11, 6, 9);
     expect(dayLabel(DateTime(2026, 11, 6, 7), now), 'Today');

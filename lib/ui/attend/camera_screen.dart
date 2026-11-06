@@ -12,8 +12,9 @@ import 'package:attendance_app/utils/face_detection/google_ml_kit.dart';
 
 class CameraScreen extends StatefulWidget {
   final AttendanceSession session;
+  final DateTime scannedAt;
 
-  const CameraScreen({super.key, required this.session});
+  const CameraScreen({super.key, required this.session, required this.scannedAt});
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -157,7 +158,11 @@ class _CameraScreenState extends State<CameraScreen>
       context,
       MaterialPageRoute(
         builder: (context) =>
-            AttendScreen(session: widget.session, image: imageFile),
+            AttendScreen(
+              session: widget.session,
+              scannedAt: widget.scannedAt,
+              image: imageFile,
+            ),
       ),
       (route) => route.isFirst,
     );

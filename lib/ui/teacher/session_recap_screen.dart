@@ -204,9 +204,9 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    // Attend, Late, Leave selalu tampil; jenis izin hanya bila ada.
+    // Attend dan Late selalu tampil; status lain hanya bila ada.
     final shown = attendanceStatuses.where(
-      (s) => ['Attend', 'Late', 'Leave'].contains(s) || counts[s]! > 0,
+      (s) => ['Attend', 'Late'].contains(s) || counts[s]! > 0,
     );
 
     return Card(

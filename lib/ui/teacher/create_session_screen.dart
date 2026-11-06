@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:attendance_app/models/attendance_session.dart';
 import 'package:attendance_app/services/user_service.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/teacher/session_qr_screen.dart';
@@ -20,6 +21,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
   final classController = TextEditingController();
   final subjectController = TextEditingController();
   int selectedMinutes = 10;
+  int selectedLateMinutes = 5;
 
   @override
   void dispose() {
@@ -37,6 +39,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
     }
 
     showLoaderDialog(context);
+    final now = DateTime.now();
     try {
       final doc = await FirebaseFirestore.instance.collection('sessions').add({
         'class_name': className,
@@ -44,7 +47,8 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
         'teacher_uid': widget.user.uid,
         'teacher_name': widget.user.name,
         'created_at': FieldValue.serverTimestamp(),
-        'expires_at': Timestamp.fromDate(DateTime.now().add(Duration(minutes: selectedMinutes))),
+        'expires_at': Timestamp.fromDate(now.add(Duration(minutes: selectedMinutes))),
+        'late_at': Timestamp.fromDate(now.add(Duration(minutes: selectedLateMinutes))),
         'active': true,
       });
       if (!mounted) return;
@@ -107,7 +111,32 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                 for (final minutes in durations)
                   DropdownMenuItem(value: minutes, child: Text("$minutes minutes")),
               ],
-              onChanged: (value) => setState(() => selectedMinutes = value ?? selectedMinutes),
+              onChanged: (value) => setState(() {
+                selectedMinutes = value ?? selectedMinutes;
+                final options = AttendanceSession.lateAfterOptions(selectedMinutes);
+                if (!options.contains(selectedLateMinutes)) selectedLateMinutes = options.last;
+              }),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            DropdownButtonFormField<int>(
+              // Daftarnya mengikuti masa berlaku QR, jadi field dibuat ulang saat itu berubah.
+              key: ValueKey('late-$selectedMinutes'),
+              initialValue: selectedLateMinutes,
+              style: textTheme.bodyLarge,
+              dropdownColor: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.field),
+              icon: const Icon(Icons.arrow_drop_down_rounded),
+              decoration: const InputDecoration(
+                labelText: "Late after",
+                helperText: "Siswa yang scan setelah batas ini tercatat Late",
+                prefixIcon: Icon(Icons.schedule_rounded),
+              ),
+              items: [
+                for (final minutes in AttendanceSession.lateAfterOptions(selectedMinutes))
+                  DropdownMenuItem(value: minutes, child: Text("$minutes minutes")),
+              ],
+              onChanged: (value) =>
+                  setState(() => selectedLateMinutes = value ?? selectedLateMinutes),
             ),
             const SizedBox(height: AppSpacing.s8),
             SizedBox(

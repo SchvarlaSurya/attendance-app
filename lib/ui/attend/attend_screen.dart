@@ -17,9 +17,17 @@ import 'package:attendance_app/ui/widgets/feedback.dart';
 
 class AttendScreen extends StatefulWidget {
   final AttendanceSession session;
+
+  /// Waktu siswa memindai QR, dasar penentuan status Attend / Late.
+  final DateTime scannedAt;
   final XFile? image;
 
-  const AttendScreen({super.key, required this.session, this.image});
+  const AttendScreen({
+    super.key,
+    required this.session,
+    required this.scannedAt,
+    this.image,
+  });
 
   @override
   State<AttendScreen> createState() => _AttendScreenState();
@@ -52,18 +60,7 @@ class _AttendScreenState extends State<AttendScreen> {
   }
 
   void setStatusAbsen() {
-    final now = DateTime.now();
-    final dateHours = now.hour;
-    final dateMinutes = now.minute;
-
-    if (dateHours < 8 || (dateHours == 8 && dateMinutes <= 30)) {
-      strStatus = "Attend";   // Tepat waktu (sebelum / pukul 08:30)
-    } else if ((dateHours > 8 && dateHours < 18) ||
-        (dateHours == 8 && dateMinutes >= 31)) {
-      strStatus = "Late";     // Terlambat (08:31 s/d 17:59)
-    } else {
-      strStatus = "Leave";    // Di luar jam operasional
-    }
+    strStatus = widget.session.statusAt(widget.scannedAt);
   }
 
   void onSubmitPressed() {
@@ -128,7 +125,7 @@ class _AttendScreenState extends State<AttendScreen> {
   void openCamera() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CameraScreen(session: widget.session)),
+      MaterialPageRoute(builder: (context) => CameraScreen(session: widget.session, scannedAt: widget.scannedAt)),
     );
   }
 

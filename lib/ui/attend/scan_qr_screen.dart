@@ -56,6 +56,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
   }
 
   Future<void> _checkQr(String? raw) async {
+    final scannedAt = DateTime.now();
     final sessionId = AttendanceSession.idFromQr(raw);
     if (sessionId == null) {
       _rejectAfterPause("QR tidak dikenali. Pindai QR sesi dari guru.", Icons.qr_code_2_rounded);
@@ -87,7 +88,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
       Navigator.of(context, rootNavigator: true).pop();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => AttendScreen(session: session)),
+        MaterialPageRoute(builder: (context) => AttendScreen(session: session, scannedAt: scannedAt)),
       );
     } on _ScanRejected catch (r) {
       if (!mounted) return;

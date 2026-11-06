@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:attendance_app/models/attendance_session.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
@@ -167,6 +168,14 @@ class _SessionQrScreenState extends State<SessionQrScreen> {
         ),
         const SizedBox(height: AppSpacing.s4),
         _buildCountdown(session, state),
+        if (isOpen && session.lateAt != null) ...[
+          const SizedBox(height: AppSpacing.s2),
+          Text(
+            "Attend sampai ${DateFormat('HH:mm').format(session.lateAt!)}, setelah itu tercatat Late",
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
         const SizedBox(height: AppSpacing.s8),
         SizedBox(
           height: AppSizes.buttonHeight,
