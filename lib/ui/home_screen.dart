@@ -26,7 +26,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final Stream<List<AttendanceRecord>> _records = widget.recordsStream ??
+  late final Stream<List<AttendanceRecord>> _records =
+      widget.recordsStream ??
       FirebaseFirestore.instance
           .collection('attendance')
           .where('uid', isEqualTo: widget.user.uid)
@@ -57,8 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
           stream: _records,
           builder: (context, snapshot) {
             final now = DateTime.now();
-            final records = List<AttendanceRecord>.from(snapshot.data ?? const [])
-              ..sort((a, b) => (b.createdAt ?? now).compareTo(a.createdAt ?? now));
+            final records =
+                List<AttendanceRecord>.from(snapshot.data ?? const [])..sort(
+                  (a, b) => (b.createdAt ?? now).compareTo(a.createdAt ?? now),
+                );
             final summary = StudentSummary.from(records, now);
 
             return ListView(
@@ -67,7 +70,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 GreetingHeader(name: widget.user.name),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.s5, AppSpacing.s4, AppSpacing.s5, 0,
+                    AppSpacing.s5,
+                    AppSpacing.s4,
+                    AppSpacing.s5,
+                    0,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,38 +118,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: AppSpacing.s6),
                       Text("Menu", style: textTheme.titleSmall),
                       const SizedBox(height: AppSpacing.s3),
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _MenuTile(
-                                title: "Permission / Leave",
-                                subtitle: "Submit leave request for sick or permission",
-                                imagePath: 'assets/images/ic_leave.png',
-                                icon: Icons.assignment_rounded,
-                                onTap: () => _push(const AbsentScreen()),
-                              ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _MenuTile(
+                              title: "Permission / Leave",
+                              subtitle:
+                                  "Submit leave request for sick or permission",
+                              imagePath: 'assets/images/ic_leave.png',
+                              icon: Icons.assignment_rounded,
+                              onTap: () => _push(const AbsentScreen()),
                             ),
-                            const SizedBox(width: AppSpacing.s3),
-                            Expanded(
-                              child: _MenuTile(
-                                title: "Attendance History",
-                                subtitle: "View and manage all attendance history records",
-                                imagePath: 'assets/images/ic_history.png',
-                                icon: Icons.history_rounded,
-                                onTap: () => _push(const AttendanceHistoryScreen()),
-                              ),
+                          ),
+                          const SizedBox(width: AppSpacing.s3),
+                          Expanded(
+                            child: _MenuTile(
+                              title: "Attendance History",
+                              subtitle:
+                                  "View and manage all attendance history records",
+                              imagePath: 'assets/images/ic_history.png',
+                              icon: Icons.history_rounded,
+                              onTap: () =>
+                                  _push(const AttendanceHistoryScreen()),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: AppSpacing.s6),
                       Text("Recent Activity", style: textTheme.titleSmall),
                       const SizedBox(height: AppSpacing.s3),
                       if (snapshot.hasError)
-                        StateView.error("Gagal memuat aktivitas: ${snapshot.error}")
-                      else if (snapshot.connectionState == ConnectionState.waiting)
+                        StateView.error(
+                          "Gagal memuat aktivitas: ${snapshot.error}",
+                        )
+                      else if (snapshot.connectionState ==
+                          ConnectionState.waiting)
                         const StateView.loading()
                       else
                         _RecentActivity(records: records.take(4).toList()),
@@ -164,7 +174,9 @@ class _HomeScreenState extends State<HomeScreen> {
             alignment: Alignment.center,
             child: Text(
               "IDN Boarding School Solo",
-              style: textTheme.labelMedium!.copyWith(color: AppColors.onPrimary),
+              style: textTheme.labelMedium!.copyWith(
+                color: AppColors.onPrimary,
+              ),
             ),
           ),
         ),
@@ -222,7 +234,9 @@ class _CheckInHero extends StatelessWidget {
                       const SizedBox(height: AppSpacing.s1),
                       Text(
                         "Take selfie photo and record your attendance",
-                        style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+                        style: textTheme.bodySmall!.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -233,7 +247,10 @@ class _CheckInHero extends StatelessWidget {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
             padding: const EdgeInsets.all(AppSpacing.s3),
-            decoration: BoxDecoration(color: AppColors.surfaceMuted, borderRadius: radius),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              borderRadius: radius,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -242,7 +259,9 @@ class _CheckInHero extends StatelessWidget {
                     children: [
                       Text(
                         "Today",
-                        style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+                        style: textTheme.bodySmall!.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       Text(
                         latest == null
@@ -253,7 +272,8 @@ class _CheckInHero extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (latest != null) StatusBadge(description: latest.description),
+                if (latest != null)
+                  StatusBadge(description: latest.description),
               ],
             ),
           ),
@@ -300,34 +320,40 @@ class _MenuTile extends StatelessWidget {
         onTap: onTap,
         splashColor: AppColors.surfaceMuted,
         highlightColor: AppColors.surfaceMuted,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: AppSizes.touchMin,
-                height: AppSizes.touchMin,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppRadius.field),
+        child: ConstrainedBox(
+          // Dua kartu sama tinggi selama teksnya muat, dan tetap bisa memanjang bila tidak.
+          constraints: const BoxConstraints(minHeight: 172),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: AppSizes.touchMin,
+                  height: AppSizes.touchMin,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.field),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(icon, color: AppColors.onPrimaryContainer),
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(icon, color: AppColors.onPrimaryContainer),
+                const SizedBox(height: AppSpacing.s3),
+                Text(title, style: textTheme.titleSmall),
+                const SizedBox(height: AppSpacing.s1),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall!.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.s3),
-              Text(title, style: textTheme.titleSmall),
-              const SizedBox(height: AppSpacing.s1),
-              Text(
-                subtitle,
-                style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -370,7 +396,9 @@ class _RecentActivity extends StatelessWidget {
                               ),
                               Text(
                                 records[i].datetime,
-                                style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary),
+                                style: textTheme.bodySmall!.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
