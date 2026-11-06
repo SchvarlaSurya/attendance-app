@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -159,22 +160,34 @@ class _AttendScreenState extends State<AttendScreen> {
     final hasPermission = await handleLocationPermission();
     if (!hasPermission) return;
 
+    if (!mounted) return;
     setState(() => isLoading = true);
     try {
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
+      final position = await _readPosition();
       dLat = position.latitude;
       dLong = position.longitude;
       await getAddressFromLongLat(position);
     } catch (e) {
       debugPrint("Error GPS: $e");
-      if (mounted) {
-        setState(() {
-          strAlamat = "Koordinat: Lat $dLat, Long $dLong";
-          isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      _showSnackBar("Lokasi belum didapat. Tekan ikon lokasi untuk mencoba lagi.", Icons.location_off_rounded);
+    }
+  }
+
+  // Tanpa batas waktu, GPS yang tidak dapat sinyal membuat Submit terkunci selamanya.
+  Future<Position> _readPosition() async {
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+    } on TimeoutException {
+      final last = await Geolocator.getLastKnownPosition();
+      if (last == null) rethrow;
+      return last;
     }
   }
 
