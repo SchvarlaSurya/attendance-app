@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:attendance_app/services/user_service.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/widgets/feedback.dart';
+import 'package:attendance_app/ui/widgets/status_badge.dart';
 
 class AbsentScreen extends StatefulWidget {
   const AbsentScreen({super.key});
@@ -15,7 +16,9 @@ class AbsentScreen extends StatefulWidget {
 class _AbsentScreenState extends State<AbsentScreen> {
   static const List<String> categories = ["Sick", "Permission", "Others"];
 
-  final nameController = TextEditingController();
+  final nameController = TextEditingController(
+    text: UserService.current.value?.name ?? '',
+  );
   final fromController = TextEditingController();
   final untilController = TextEditingController();
   String? selectedCategory;
@@ -102,9 +105,18 @@ class _AbsentScreenState extends State<AbsentScreen> {
     );
   }
 
+  // Lama izin dalam hari, null bila tanggal belum lengkap atau tidak valid.
+  int? get _dayCount {
+    if (fromController.text.isEmpty || untilController.text.isEmpty) return null;
+    final format = DateFormat('dd/MM/yyyy');
+    final days = format.parse(untilController.text).difference(format.parse(fromController.text)).inDays;
+    return days < 0 ? null : days + 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final dayCount = _dayCount;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Permission / Leave")),
@@ -115,26 +127,61 @@ class _AbsentScreenState extends State<AbsentScreen> {
             vertical: AppSpacing.s4,
           ),
           children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.s4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_note_rounded, color: AppColors.onPrimaryContainer),
+                  const SizedBox(width: AppSpacing.s3),
+                  Expanded(
+                    child: Text(
+                      "Tidak bisa hadir? Ajukan izin di sini, lalu pantau di Attendance History.",
+                      style: textTheme.bodyMedium!.copyWith(color: AppColors.onPrimaryContainer),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s6),
             TextField(
               controller: nameController,
               textCapitalization: TextCapitalization.words,
               style: textTheme.bodyLarge,
               decoration: _decoration("Full Name", Icons.person_outline_rounded),
             ),
-            const SizedBox(height: AppSpacing.s4),
-            DropdownButtonFormField<String>(
-              initialValue: selectedCategory,
-              style: textTheme.bodyLarge,
-              dropdownColor: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.field),
-              icon: const Icon(Icons.arrow_drop_down_rounded),
-              decoration: _decoration("Description", Icons.description_rounded),
-              items: categories
-                  .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                  .toList(),
-              onChanged: (value) => setState(() => selectedCategory = value),
+            const SizedBox(height: AppSpacing.s6),
+            Text("Description", style: textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.s3),
+            Row(
+              children: [
+                for (var i = 0; i < categories.length; i++) ...[
+                  if (i > 0) const SizedBox(width: AppSpacing.s3),
+                  Expanded(
+                    child: _CategoryTile(
+                      label: categories[i],
+                      selected: selectedCategory == categories[i],
+                      onTap: () => setState(() => selectedCategory = categories[i]),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s6),
+            Row(
+              children: [
+                Expanded(child: Text("Date", style: textTheme.titleSmall)),
+                if (dayCount != null)
+                  Text(
+                    dayCount == 1 ? "1 day" : "$dayCount days",
+                    style: textTheme.labelMedium!.copyWith(color: AppColors.primary),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s3),
             Row(
               children: [
                 Expanded(
@@ -168,6 +215,62 @@ class _AbsentScreenState extends State<AbsentScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pilihan jenis izin: ikon dan label status, garis tebal saat dipilih.
+class _CategoryTile extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryTile({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = statusStyleOf(label);
+    final radius = BorderRadius.circular(AppRadius.card);
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? style.container : AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: style.base, shape: BoxShape.circle),
+                  child: Icon(style.icon, size: 20, color: style.onBase),
+                ),
+                const SizedBox(height: AppSpacing.s2),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                        color: selected ? style.onContainer : AppColors.textPrimary,
+                      ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

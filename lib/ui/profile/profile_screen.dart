@@ -13,7 +13,9 @@ class ProfileView extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Logout?"),
-        content: const Text("Kamu perlu mengisi nama dan peran lagi untuk memakai aplikasi."),
+        content: const Text(
+          "Kamu perlu mengisi nama dan peran lagi untuk memakai aplikasi.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -43,7 +45,12 @@ class ProfileView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary)),
+                Text(
+                  label,
+                  style: textTheme.bodySmall!.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 Text(value, style: textTheme.bodyLarge),
               ],
             ),
@@ -59,48 +66,100 @@ class ProfileView extends StatelessWidget {
     final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : '?';
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.s5, AppSpacing.s6, AppSpacing.s5, AppSpacing.s4,
-      ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
       children: [
-        Center(
-          child: CircleAvatar(
-            radius: 40,
-            backgroundColor: AppColors.primary,
-            child: Text(
-              initial,
-              style: textTheme.titleLarge!.copyWith(color: AppColors.onPrimary, fontSize: 32),
-            ),
+        Container(
+          color: AppColors.primary,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s5,
+            AppSpacing.s2,
+            AppSpacing.s5,
+            AppSpacing.s6,
+          ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.primaryContainer,
+                child: Text(
+                  initial,
+                  style: textTheme.titleLarge!.copyWith(
+                    color: AppColors.onPrimaryContainer,
+                    fontSize: 32,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s3),
+              Text(
+                user.name,
+                textAlign: TextAlign.center,
+                style: textTheme.titleLarge!.copyWith(
+                  color: AppColors.onPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s1),
+              Text(
+                user.roleLabel,
+                style: textTheme.bodyMedium!.copyWith(
+                  color: AppColors.primaryContainer,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppSpacing.s3),
-        Text(user.name, style: textTheme.titleLarge, textAlign: TextAlign.center),
-        const SizedBox(height: AppSpacing.s6),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s1),
-            child: Column(
-              children: [
-                _row(context, Icons.person_outline_rounded, "Full Name", user.name),
-                const Divider(height: 1, color: AppColors.border),
-                _row(context, Icons.badge_outlined, "Role", user.roleLabel),
-              ],
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s5,
+            AppSpacing.s6,
+            AppSpacing.s5,
+            0,
           ),
-        ),
-        const SizedBox(height: AppSpacing.s8),
-        SizedBox(
-          height: AppSizes.buttonHeight,
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.danger,
-              side: const BorderSide(color: AppColors.danger),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
-              textStyle: textTheme.labelLarge,
-            ),
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text("Logout"),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s4,
+                    vertical: AppSpacing.s1,
+                  ),
+                  child: Column(
+                    children: [
+                      _row(
+                        context,
+                        Icons.person_outline_rounded,
+                        "Full Name",
+                        user.name,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      _row(
+                        context,
+                        Icons.badge_outlined,
+                        "Role",
+                        user.roleLabel,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              SizedBox(
+                height: AppSizes.buttonHeight,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    side: const BorderSide(color: AppColors.danger),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.button),
+                    ),
+                    textStyle: textTheme.labelLarge,
+                  ),
+                  onPressed: () => _logout(context),
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text("Logout"),
+                ),
+              ),
+            ],
           ),
         ),
       ],

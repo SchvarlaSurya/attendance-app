@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:attendance_app/models/attendance_record.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/widgets/feedback.dart';
 import 'package:attendance_app/ui/widgets/status_badge.dart';
+import 'package:attendance_app/utils/date_labels.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -14,6 +16,15 @@ class AttendanceHistoryScreen extends StatefulWidget {
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   final CollectionReference dataCollection =
       FirebaseFirestore.instance.collection('attendance');
+  // Dibuat sekali supaya ganti filter tidak memuat ulang daftar.
+  late final Stream<QuerySnapshot> _historyStream = dataCollection.snapshots();
+  String _filter = 'all';
+
+  static const _filters = {
+    'all': ('All', Icons.list_rounded),
+    'attendance': ('Attendance', Icons.qr_code_rounded),
+    'permission': ('Permission', Icons.assignment_rounded),
+  };
 
   Color _getAvatarColor(String name) {
     if (name.trim().isEmpty) return Colors.blueGrey;
@@ -219,60 +230,104 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Attendance History")),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s4, AppSpacing.s5, 0),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: dataCollection.snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return _buildStateView(icon: const CircularProgressIndicator());
-              }
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s3, AppSpacing.s5, 0),
+              child: Wrap(
+                spacing: AppSpacing.s2,
+                children: [
+                  for (final entry in _filters.entries)
+                    ChoiceChip(
+                      avatar: Icon(
+                        entry.value.$2,
+                        size: 18,
+                        color: _filter == entry.key
+                            ? AppColors.onPrimaryContainer
+                            : AppColors.textSecondary,
+                      ),
+                      showCheckmark: false,
+                      label: Text(entry.value.$1),
+                      labelStyle: Theme.of(context).textTheme.labelMedium!.copyWith(
+                            color: _filter == entry.key
+                                ? AppColors.onPrimaryContainer
+                                : AppColors.textSecondary,
+                          ),
+                      selected: _filter == entry.key,
+                      selectedColor: AppColors.primaryContainer,
+                      backgroundColor: AppColors.surface,
+                      side: BorderSide(
+                        color: _filter == entry.key ? AppColors.primary : AppColors.border,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      onSelected: (_) => setState(() => _filter = entry.key),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _historyStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return _buildStateView(icon: const CircularProgressIndicator());
+                  }
 
-              if (snapshot.hasError) {
-                return _buildStateView(
-                  icon: const Icon(Icons.error_rounded, size: 48, color: AppColors.danger),
-                  message: "Gagal memuat riwayat: ${snapshot.error}",
-                );
-              }
+                  if (snapshot.hasError) {
+                    return _buildStateView(
+                      icon: const Icon(Icons.error_rounded, size: 48, color: AppColors.danger),
+                      message: "Gagal memuat riwayat: ${snapshot.error}",
+                    );
+                  }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return _buildStateView(
-                  icon: const Icon(Icons.history_rounded, size: 48, color: AppColors.textSecondary),
-                  message: "Belum ada riwayat presensi",
-                );
-              }
+                  final now = DateTime.now();
+                  final records = (snapshot.data?.docs ?? const <QueryDocumentSnapshot>[])
+                      .map(AttendanceRecord.fromDoc)
+                      .where((r) =>
+                          _filter == 'all' || (_filter == 'permission') == r.isPermission)
+                      .toList()
+                    // created_at masih null = baru ditulis, belum dikonfirmasi server -> paling atas
+                    ..sort((a, b) => (b.createdAt ?? now).compareTo(a.createdAt ?? now));
 
-              // Urutkan data berdasarkan created_at secara aman di memori
-              final docs = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
-              docs.sort((a, b) {
-                final dataA = a.data() as Map<String, dynamic>? ?? {};
-                final dataB = b.data() as Map<String, dynamic>? ?? {};
-                final timeA = dataA['created_at'] as Timestamp?;
-                final timeB = dataB['created_at'] as Timestamp?;
-                if (timeA != null && timeB != null) {
-                  return timeB.compareTo(timeA);
-                }
-                // created_at masih null = baru ditulis, belum dikonfirmasi server -> paling atas
-                if (timeA == null && timeB != null) return -1;
-                if (timeA != null && timeB == null) return 1;
-                return 0;
-              });
+                  if (records.isEmpty) {
+                    return _buildStateView(
+                      icon: const Icon(Icons.history_rounded, size: 48, color: AppColors.textSecondary),
+                      message: "Belum ada riwayat presensi",
+                    );
+                  }
 
-              return ListView.builder(
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>? ?? {};
-                  final docId = docs[index].id;
-                  final name = data['name']?.toString() ?? 'Unknown';
-                  final address = data['address']?.toString() ?? '-';
-                  final description = data['description']?.toString() ?? '-';
-                  final datetime = data['datetime']?.toString() ?? '-';
+                  final items = <Widget>[];
+                  String? currentDay;
+                  for (final r in records) {
+                    final day = dayLabel(r.createdAt ?? now, now);
+                    if (day != currentDay) {
+                      items.add(
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.s3,
+                            bottom: AppSpacing.s3,
+                          ),
+                          child: Text(day, style: Theme.of(context).textTheme.titleSmall),
+                        ),
+                      );
+                      currentDay = day;
+                    }
+                    items.add(_buildAttendanceCard(r.id, r.name, r.address, r.description, r.datetime));
+                  }
 
-                  return _buildAttendanceCard(docId, name, address, description, datetime);
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.s5, AppSpacing.s1, AppSpacing.s5, AppSpacing.s4,
+                    ),
+                    children: items,
+                  );
                 },
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

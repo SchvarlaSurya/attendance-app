@@ -11,8 +11,10 @@ import 'package:attendance_app/ui/teacher/create_session_screen.dart';
 import 'package:attendance_app/ui/teacher/session_qr_screen.dart';
 import 'package:attendance_app/ui/teacher/session_recap_screen.dart';
 import 'package:attendance_app/ui/teacher/session_status.dart';
+import 'package:attendance_app/ui/widgets/dashboard_parts.dart';
 import 'package:attendance_app/ui/widgets/state_view.dart';
 import 'package:attendance_app/ui/widgets/status_badge.dart';
+import 'package:attendance_app/utils/date_labels.dart';
 
 /// Batas `whereIn` Firestore: rekap dashboard memakai 30 sesi terbaru.
 const _maxSessions = 30;
@@ -47,12 +49,12 @@ class _TeacherHomeViewState extends State<TeacherHomeView> {
       stream: _sessionsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return ListView(children: [_Header(user: widget.user), const StateView.loading()]);
+          return ListView(children: [GreetingHeader(name: widget.user.name), const StateView.loading()]);
         }
         if (snapshot.hasError) {
           return ListView(
             children: [
-              _Header(user: widget.user),
+              GreetingHeader(name: widget.user.name),
               StateView.error("Gagal memuat sesi: ${snapshot.error}"),
             ],
           );
@@ -160,7 +162,7 @@ class _DashboardState extends State<_Dashboard> {
     final now = DateTime.now();
     final sessions = widget.sessions;
 
-    bool isToday(DateTime? d) => sessionDayLabel(d ?? now, now) == 'Today';
+    bool isToday(DateTime? d) => dayLabel(d ?? now, now) == 'Today';
     final todaySessions = sessions.where((s) => isToday(s.createdAt)).toList();
     final todayIds = todaySessions.map((s) => s.id).toSet();
     final todayRecords = records.where((r) => todayIds.contains(r.sessionId)).toList()
@@ -184,7 +186,7 @@ class _DashboardState extends State<_Dashboard> {
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSpacing.s6),
       children: [
-        _Header(user: widget.user),
+        GreetingHeader(name: widget.user.name),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.s5, AppSpacing.s4, AppSpacing.s5, 0,
@@ -195,7 +197,7 @@ class _DashboardState extends State<_Dashboard> {
               Row(
                 children: [
                   Expanded(
-                    child: _StatTile(
+                    child: StatTile(
                       icon: Icons.event_note_rounded,
                       value: todaySessions.length,
                       label: "Sessions",
@@ -204,7 +206,7 @@ class _DashboardState extends State<_Dashboard> {
                   ),
                   const SizedBox(width: AppSpacing.s3),
                   Expanded(
-                    child: _StatTile(
+                    child: StatTile(
                       icon: Icons.check_rounded,
                       value: statusCounts['Attend'] ?? 0,
                       label: "Attend",
@@ -213,7 +215,7 @@ class _DashboardState extends State<_Dashboard> {
                   ),
                   const SizedBox(width: AppSpacing.s3),
                   Expanded(
-                    child: _StatTile(
+                    child: StatTile(
                       icon: Icons.schedule_rounded,
                       value: statusCounts['Late'] ?? 0,
                       label: "Late",
@@ -290,7 +292,7 @@ class _DashboardState extends State<_Dashboard> {
     final widgets = <Widget>[];
     String? currentDay;
     for (final session in sessions) {
-      final day = sessionDayLabel(session.createdAt ?? now, now);
+      final day = dayLabel(session.createdAt ?? now, now);
       if (day != currentDay) {
         if (currentDay != null) widgets.add(const SizedBox(height: AppSpacing.s3));
         widgets.add(Text(day, style: textTheme.titleSmall));
@@ -330,70 +332,6 @@ class _Record {
       data['name']?.toString() ?? 'Unknown',
       data['description']?.toString() ?? '-',
       (data['created_at'] as Timestamp?)?.toDate(),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  final AppUser user;
-
-  const _Header({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      color: AppColors.primary,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.s5, AppSpacing.s1, AppSpacing.s5, AppSpacing.s5,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Hello, ${user.name}",
-            style: textTheme.titleLarge!.copyWith(color: AppColors.onPrimary),
-          ),
-          const SizedBox(height: AppSpacing.s1),
-          Text(
-            DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-            style: textTheme.bodyMedium!.copyWith(color: AppColors.primaryContainer),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final int value;
-  final String label;
-  final Color color;
-
-  const _StatTile({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s3),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(height: AppSpacing.s2),
-            Text("$value", style: textTheme.titleLarge),
-            Text(label, style: textTheme.bodySmall!.copyWith(color: AppColors.textSecondary)),
-          ],
-        ),
-      ),
     );
   }
 }

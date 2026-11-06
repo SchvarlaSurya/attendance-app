@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:attendance_app/models/attendance_session.dart';
 import 'package:attendance_app/theme/app_tokens.dart';
 import 'package:attendance_app/ui/widgets/status_badge.dart';
@@ -50,14 +49,4 @@ String formatCountdown(Duration d) {
   final minutes = d.inMinutes.toString().padLeft(2, '0');
   final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
-}
-
-/// Judul kelompok sesi per hari: Today, Yesterday, atau tanggal lengkap.
-String sessionDayLabel(DateTime day, DateTime now) {
-  final d = DateTime(day.year, day.month, day.day);
-  final today = DateTime(now.year, now.month, now.day);
-  final diff = today.difference(d).inDays;
-  if (diff == 0) return 'Today';
-  if (diff == 1) return 'Yesterday';
-  return DateFormat('d MMMM yyyy').format(day);
 }

@@ -222,6 +222,8 @@ class _AttendScreenState extends State<AttendScreen> {
           ),
           children: [
             _buildSessionInfo(textTheme),
+            const SizedBox(height: AppSpacing.s4),
+            _buildProgress(textTheme),
             const SizedBox(height: AppSpacing.s6),
             TextField(
               controller: nameController,
@@ -261,6 +263,52 @@ class _AttendScreenState extends State<AttendScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Yang sudah beres dan yang belum, supaya siswa tahu sisa langkahnya.
+  Widget _buildProgress(TextTheme textTheme) {
+    final steps = [
+      ("QR", Icons.qr_code_rounded, true),
+      ("Selfie", Icons.camera_front_rounded, widget.image != null),
+      ("Location", Icons.location_on_rounded, strAlamat.isNotEmpty),
+    ];
+
+    return Row(
+      children: [
+        for (var i = 0; i < steps.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.s2),
+          Expanded(child: _buildStep(textTheme, steps[i].$1, steps[i].$2, steps[i].$3)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStep(TextTheme textTheme, String label, IconData icon, bool done) {
+    return Container(
+      height: AppSizes.touchMin,
+      decoration: BoxDecoration(
+        color: done ? AppColors.statusAttendContainer : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+        border: Border.all(color: done ? AppColors.statusAttend : AppColors.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            done ? Icons.check_rounded : icon,
+            size: 16,
+            color: done ? AppColors.statusAttendOnContainer : AppColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.s1),
+          Text(
+            label,
+            style: textTheme.labelSmall!.copyWith(
+              color: done ? AppColors.statusAttendOnContainer : AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
