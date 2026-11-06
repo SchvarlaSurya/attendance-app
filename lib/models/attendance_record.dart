@@ -32,7 +32,8 @@ class AttendanceRecord {
       address: data['address']?.toString() ?? '-',
       type: data['type']?.toString() ?? 'attendance',
       className: data['class_name']?.toString(),
-      createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      // Koleksi ini juga ditulis aplikasi lain, jadi tipenya tidak dijamin.
+      createdAt: data['created_at'] is Timestamp ? (data['created_at'] as Timestamp).toDate() : null,
     );
   }
 

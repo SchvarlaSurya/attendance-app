@@ -285,6 +285,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
                   final now = DateTime.now();
                   final records = (snapshot.data?.docs ?? const <QueryDocumentSnapshot>[])
+                      // Dokumen tanpa nama bukan data presensi (mis. milik aplikasi lain).
+                      .where((d) => (d.data() as Map<String, dynamic>?)?['name'] != null)
                       .map(AttendanceRecord.fromDoc)
                       .where((r) =>
                           _filter == 'all' || (_filter == 'permission') == r.isPermission)

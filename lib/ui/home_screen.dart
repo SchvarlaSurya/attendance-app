@@ -155,13 +155,18 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      bottomNavigationBar: Container(
-        height: AppSizes.footerHeight,
+      bottomNavigationBar: ColoredBox(
         color: AppColors.primary,
-        alignment: Alignment.center,
-        child: Text(
-          "IDN Boarding School Solo",
-          style: textTheme.labelMedium!.copyWith(color: AppColors.onPrimary),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: AppSizes.footerHeight,
+            alignment: Alignment.center,
+            child: Text(
+              "IDN Boarding School Solo",
+              style: textTheme.labelMedium!.copyWith(color: AppColors.onPrimary),
+            ),
+          ),
         ),
       ),
     );
