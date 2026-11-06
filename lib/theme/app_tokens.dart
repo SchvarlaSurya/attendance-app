@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const primary = Color(0xFF4F46E5);
-  static const primaryPressed = Color(0xFF4338CA);
+  static const primary = Color(0xFF0F766E);
+  static const primaryPressed = Color(0xFF115E59);
   static const onPrimary = Color(0xFFFFFFFF);
-  static const primaryContainer = Color(0xFFEEF2FF);
-  static const onPrimaryContainer = Color(0xFF3730A3);
+  static const primaryContainer = Color(0xFFCCFBF1);
+  static const onPrimaryContainer = Color(0xFF134E4A);
   static const accent = Color(0xFFF59E0B);
   static const onAccent = Color(0xFF0F172A);
-  static const background = Color(0xFFF8FAFC);
+  static const background = Color(0xFFF6FAF9);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceMuted = Color(0xFFF1F5F9);
   static const textPrimary = Color(0xFF0F172A);
